@@ -43,25 +43,26 @@ if st.button("Generate Baddie Image", type="primary"):
         # Initialize the Google GenAI client
         client = genai.Client(api_key=api_key)
 
-        # Request image generation using the correct active model endpoint
-        response = client.models.generate_images(
-            model="imagen-3.0-generate-002",
-            prompt=prompt,
-            config=types.GenerateImagesConfig(
-                number_of_images=1, output_mime_type="image/jpeg"
+        # Request image generation using the correct multimodal flash image model
+        response = client.models.generate_content(
+            model="gemini-3.1-flash-image",
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_modalities=["IMAGE"],
             ),
         )
 
         image_found = False
-        for generated_image in response.generated_images:
-          image_found = True
-          image_bytes = generated_image.image.image_bytes
-          image = Image.open(BytesIO(image_bytes))
+        for part in response.parts:
+          if part.inline_data:
+            image_found = True
+            image_bytes = part.inline_data.data
+            image = Image.open(BytesIO(image_bytes))
 
-          st.success("Generation complete!")
-          st.image(
-              image, caption="Y2K Construction Baddie", use_container_width=True
-          )
+            st.success("Generation complete!")
+            st.image(
+                image, caption="Y2K Construction Baddie", use_container_width=True
+            )
 
         if not image_found:
           st.warning(
